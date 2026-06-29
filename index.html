@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Random Video Picker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0f0f0f; color: #f1f1f1;
+    min-height: 100vh; display: flex;
+    align-items: flex-start; justify-content: center;
+    padding: 2.5rem 1rem;
+  }
+  .wrap { width: 100%; max-width: 540px; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+  .sub { font-size: 14px; color: #aaa; margin-bottom: 2rem; }
+
+  .key-box { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 16px; margin-bottom: 1.5rem; }
+  .key-label { font-size: 12px; color: #aaa; margin-bottom: 8px; }
+  .key-row { display: flex; gap: 8px; }
+  .key-row input {
+    flex: 1; padding: 10px 12px; font-size: 13px; font-family: monospace;
+    border-radius: 8px; border: 1px solid #333; background: #111; color: #f1f1f1;
+  }
+  .key-row input:focus { outline: none; border-color: #555; }
+  .save-btn {
+    padding: 10px 16px; font-size: 14px; font-weight: 500;
+    border-radius: 8px; border: 1px solid #333; background: #222; color: #f1f1f1; cursor: pointer;
+  }
+  .save-btn:hover { background: #2a2a2a; }
+  .key-ok { font-size: 12px; color: #4caf50; margin-top: 8px; display: none; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; }
+  .chip {
+    padding: 7px 15px; border-radius: 99px; font-size: 14px; cursor: pointer;
+    border: 1px solid #2a2a2a; background: #1a1a1a; color: #aaa; transition: all 0.15s;
+  }
+  .chip:hover { border-color: #444; color: #f1f1f1; }
+  .chip.on { background: #f1f1f1; color: #0f0f0f; border-color: #f1f1f1; font-weight: 600; }
+
+  .roll-btn {
+    width: 100%; padding: 14px; font-size: 16px; font-weight: 700;
+    border-radius: 10px; border: none; cursor: pointer;
+    background: #ff0000; color: #fff; transition: opacity 0.15s, transform 0.1s;
+  }
+  .roll-btn:hover { opacity: 0.88; }
+  .roll-btn:active { transform: scale(0.98); }
+  .roll-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+  .err { font-size: 13px; color: #f44336; margin-top: 10px; display: none; }
+
+  .card {
+    margin-top: 1.5rem; border-radius: 12px; overflow: hidden;
+    border: 1px solid #2a2a2a; background: #1a1a1a; display: none;
+  }
+  .card.show { display: block; }
+  .thumb-wrap { position: relative; cursor: pointer; }
+  .thumb-wrap img { width: 100%; height: 220px; object-fit: cover; display: block; }
+  .play-overlay {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.3);
+  }
+  .play-overlay svg { width: 64px; height: 64px; opacity: 0.9; }
+  .card-info { padding: 14px 16px 8px; }
+  .vid-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; line-height: 1.4; }
+  .vid-channel { font-size: 13px; color: #aaa; }
+  .card-actions { display: flex; gap: 8px; padding: 10px 16px 16px; }
+  .watch-btn {
+    flex: 1; padding: 10px; font-size: 14px; font-weight: 600;
+    border-radius: 8px; border: none; cursor: pointer;
+    background: #ff0000; color: #fff; transition: opacity 0.15s;
+  }
+  .watch-btn:hover { opacity: 0.85; }
+  .again-btn {
+    padding: 10px 18px; font-size: 14px; font-weight: 500;
+    border-radius: 8px; border: 1px solid #333; background: transparent; color: #f1f1f1; cursor: pointer;
+  }
+  .again-btn:hover { background: #1a1a1a; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎲 Random Video</h1>
+  <p class="sub">Paste your YouTube API key, pick a vibe, and roll.</p>
+
+  <div class="key-box">
+    <p class="key-label">YouTube Data API v3 key</p>
+    <div class="key-row">
+      <input type="text" id="apiKey" placeholder="AIzaSy..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <button class="save-btn" onclick="saveKey()">Save</button>
+    </div>
+    <p class="key-ok" id="keyOk">✓ Key saved</p>
+  </div>
+
+  <div class="chips" id="chips"></div>
+
+  <button class="roll-btn" id="rollBtn" disabled onclick="roll()">🎲 Surprise me</button>
+  <p class="err" id="err"></p>
+
+  <div class="card" id="card">
+    <div class="thumb-wrap" id="thumbWrap">
+      <img id="thumb" src="" alt="thumbnail" />
+      <div class="play-overlay">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="32" fill="rgba(0,0,0,0.5)"/>
+          <polygon points="26,20 26,44 46,32" fill="white"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-info">
+      <p class="vid-title" id="vidTitle"></p>
+      <p class="vid-channel" id="vidChannel"></p>
+    </div>
+    <div class="card-actions">
+      <button class="watch-btn" id="watchBtn">▶ Watch on YouTube</button>
+      <button class="again-btn" onclick="roll()">Reshuffle</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const cats = [
+  { label: "🏕️ Outdoor",      q: "outdoor adventure wilderness hiking vlog" },
+  { label: "👻 Paranormal",    q: "paranormal investigation ghost hunting real" },
+  { label: "🎬 Documentary",   q: "full documentary film 2023 2024" },
+  { label: "🌊 Ocean",         q: "deep sea ocean underwater creatures" },
+  { label: "🚀 Space",         q: "space universe NASA cosmos documentary" },
+  { label: "🏙️ Urban Explore", q: "urban exploration abandoned places" },
+  { label: "🐾 Wildlife",      q: "wildlife animals nature BBC" },
+  { label: "🎭 History",       q: "ancient history civilization documentary" },
+];
+
+let apiKey = '';
+let selected = null;
+
+function saveKey() {
+  const v = document.getElementById('apiKey').value.trim();
+  if (!v) return;
+  apiKey = v;
+  document.getElementById('keyOk').style.display = 'block';
+  updateBtn();
+}
+
+function updateBtn() {
+  document.getElementById('rollBtn').disabled = !(apiKey && selected);
+}
+
+function renderChips() {
+  const el = document.getElementById('chips');
+  cats.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'chip';
+    d.textContent = c.label;
+    d.onclick = () => {
+      selected = c;
+      document.querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
+      d.classList.add('on');
+      updateBtn();
+    };
+    el.appendChild(d);
+  });
+}
+
+async function roll() {
+  if (!apiKey || !selected) return;
+  const btn = document.getElementById('rollBtn');
+  const err = document.getElementById('err');
+  btn.disabled = true;
+  btn.textContent = 'Finding a video…';
+  err.style.display = 'none';
+  document.getElementById('card').classList.remove('show');
+
+  try {
+    const pages = ['', '&pageToken=CAUQAA', '&pageToken=CBkQAA', '&pageToken=CDsQAA', '&pageToken=CLsQAA'];
+    const page = pages[Math.floor(Math.random() * pages.length)];
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=25&q=${encodeURIComponent(selected.q)}&key=${apiKey}${page}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error.message);
+
+    const items = (data.items || []).filter(i => i.id && i.id.videoId);
+    if (!items.length) throw new Error('No videos found.');
+
+    const item = items[Math.floor(Math.random() * items.length)];
+    const vid = item.id.videoId;
+    const watchUrl = 'https://www.youtube.com/watch?v=' + vid;
+
+    document.getElementById('vidTitle').textContent = item.snippet.title;
+    document.getElementById('vidChannel').textContent = item.snippet.channelTitle;
+    document.getElementById('thumb').src = item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url;
+    document.getElementById('watchBtn').onclick = () => window.open(watchUrl, '_blank');
+    document.getElementById('thumbWrap').onclick = () => window.open(watchUrl, '_blank');
+    document.getElementById('card').classList.add('show');
+  } catch(e) {
+    err.textContent = '⚠ ' + (e.message || 'Something went wrong. Check your API key.');
+    err.style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🎲 Surprise me';
+}
+
+renderChips();
+</script>
+</body>
+</html>
