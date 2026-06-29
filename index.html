@@ -117,7 +117,7 @@
 const cats = [
   { label: "🏕️ Outdoor",      q: "appalachia rural america dark history forgotten places documentary" },
   { label: "👻 Paranormal",    q: "overnight haunted location challenge sam and colby ghost hunting" },
-  { label: "🎬 Documentary",   q: "animated documentary motion graphics history explained" },
+  { label: "🎬 Documentary",   q: "animated documentary film -tutorial -how to -tips -beginners -course" },
   { label: "🌊 Ocean",         q: "deep sea ocean underwater creatures documentary" },
   { label: "🚀 Space",         q: "space universe NASA cosmos documentary" },
   { label: "🏙️ Urban Explore", q: "urban exploration abandoned places documentary" },
@@ -190,14 +190,23 @@ async function roll() {
   try {
     const pages = ['', '&pageToken=CAUQAA', '&pageToken=CBkQAA', '&pageToken=CDsQAA', '&pageToken=CLsQAA'];
     const page = pages[Math.floor(Math.random() * pages.length)];
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoDuration=long&relevanceLanguage=en&maxResults=25&q=${encodeURIComponent(selected.q)}&key=${apiKey}${page}`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoDuration=long&relevanceLanguage=en&regionCode=US&maxResults=25&q=${encodeURIComponent(selected.q)}&key=${apiKey}${page}`;
     const res = await fetch(url);
     const data = await res.json();
 
     if (data.error) throw new Error(data.error.message);
 
-    const items = (data.items || []).filter(i => i.id && i.id.videoId);
-    if (!items.length) throw new Error('No videos found.');
+    function isEnglish(text) {
+      return !/[\u0900-\u097F\u0600-\u06FF\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF\u0400-\u04FF]/.test(text);
+    }
+
+    const items = (data.items || []).filter(i => {
+      if (!i.id || !i.id.videoId) return false;
+      const title = i.snippet.title || '';
+      const channel = i.snippet.channelTitle || '';
+      return isEnglish(title) && isEnglish(channel);
+    });
+    if (!items.length) throw new Error('No English videos found, try reshuffling.');
 
     const item = items[Math.floor(Math.random() * items.length)];
     const vid = item.id.videoId;
