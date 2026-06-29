@@ -190,7 +190,7 @@ async function roll() {
   try {
     const pages = ['', '&pageToken=CAUQAA', '&pageToken=CBkQAA', '&pageToken=CDsQAA', '&pageToken=CLsQAA'];
     const page = pages[Math.floor(Math.random() * pages.length)];
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=25&q=${encodeURIComponent(selected.q)}&key=${apiKey}${page}`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoDuration=long&maxResults=25&q=${encodeURIComponent(selected.q)}&key=${apiKey}${page}`;
     const res = await fetch(url);
     const data = await res.json();
 
