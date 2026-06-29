@@ -117,7 +117,7 @@
 const cats = [
   { label: "🏕️ Outdoor",      q: "appalachia rural america dark history forgotten places documentary" },
   { label: "👻 Paranormal",    q: "overnight haunted location challenge sam and colby ghost hunting" },
-  { label: "🎬 Documentary",   q: "documentary mystery crime psychology true crime dark history "visual ventures" OR "stay awake" OR "fern" OR "beyond evil" OR "groovygavin" OR "bright sun films" OR "wendigoon" OR "LEMMiNO" OR "bedtime stories" OR "company man" OR "plainly difficult"" },
+  { label: "🎬 Documentary",   channelIds: ["UCt3JiNkefsfbA2N4SgEkoiQ","UCoV5rqQ-ZwLahX1Q0aEsneA","UCODHrzPMGbNv67e84WDZhQQ","UC2Bz8MkHXZgCdi6voGQ0v0Q","UCbDOyUC4lmAJn9SvVnhEAGw","UCYwVxWpjeKFWwu8TML-Te9A","UCpFFItkfZz1qz5PpHpqzYBw","UCMX31RavkfUHJvw03RbUZnA","UC9PIn6-XuRKZ5HmYeu46AIw","UCsVIQ2ipmCbua6s8ThFLo5A","UCNEs6RmBQwQrr39RmDCDa8A","UCIjen-xV2yH2krJgEjKS9NA","UCW9QJjdFT9IdCjGpf1U74GQ","UCaGOgwGKnDVOKY0DrFsBAiA","UCU3oAyhHDXjgbxazqOEG2UA","UCG4wigbjnwzBIck_8t_IWSg","UCn7Ef9w8dTXyk9kNgti9aWw","UCw4ccFtBN7dhQBcHmE0qylg","UCZ4HyRUXSg62i9dWT6oIGIQ"] },
   { label: "🌊 Ocean",         q: "deep sea ocean underwater creatures documentary" },
   { label: "🚀 Space",         q: "space universe NASA cosmos documentary" },
   { label: "🏙️ Urban Explore", q: "urban exploration abandoned places documentary" },
@@ -190,7 +190,13 @@ async function roll() {
   try {
     const pages = ['', '&pageToken=CAUQAA', '&pageToken=CBkQAA', '&pageToken=CDsQAA', '&pageToken=CLsQAA'];
     const page = pages[Math.floor(Math.random() * pages.length)];
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoDuration=long&relevanceLanguage=en&regionCode=US&maxResults=25&q=${encodeURIComponent(selected.q)}&key=${apiKey}${page}`;
+    let url;
+    if (selected.channelIds) {
+      const chId = selected.channelIds[Math.floor(Math.random() * selected.channelIds.length)];
+      url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoDuration=long&maxResults=25&channelId=${chId}&key=${apiKey}${page}`;
+    } else {
+      url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoDuration=long&relevanceLanguage=en&regionCode=US&maxResults=25&q=${encodeURIComponent(selected.q)}&key=${apiKey}${page}`;
+    }
     const res = await fetch(url);
     const data = await res.json();
 
